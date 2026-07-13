@@ -19,6 +19,13 @@
             <label>Tipo (opcional)</label>
             <input type="text" name="type" value="{{ old('type') }}" placeholder="taller, clinica...">
 
+            <label>Proveedor de envío</label>
+            <select name="provider">
+                <option value="meta" {{ old('provider') === 'twilio' ? '' : 'selected' }}>Meta (WhatsApp Cloud API)</option>
+                <option value="twilio" {{ old('provider') === 'twilio' ? 'selected' : '' }}>Twilio</option>
+            </select>
+            <p class="muted" style="font-size:12px; margin-top:6px;">Podrás cambiarlo y configurar sus credenciales después.</p>
+
             <button class="btn" style="margin-top:20px;">Crear instancia</button>
         </form>
     </div>

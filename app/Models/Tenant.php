@@ -32,12 +32,16 @@ class Tenant extends Model
         'wa_business_account_id',
         'wa_phone_number',
         'wa_access_token',
+        'twilio_account_sid',
+        'twilio_auth_token',
+        'twilio_from',
     ];
 
     protected $hidden = [
         'client_secret_hash',
         'api_token_hash',
         'wa_access_token',
+        'twilio_auth_token',
     ];
 
     protected function casts(): array
@@ -45,6 +49,7 @@ class Tenant extends Model
         return [
             'active' => 'boolean',
             'wa_access_token' => 'encrypted',
+            'twilio_auth_token' => 'encrypted',
         ];
     }
 

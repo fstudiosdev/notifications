@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Messaging\NotificationDispatcher;
 use App\Messaging\OutboundMessage;
+use App\Messaging\ProviderManager;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class InstanceController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'type' => ['nullable', 'string', 'max:40'],
+            'provider' => ['required', Rule::in(ProviderManager::CHOICES)],
         ]);
 
         $slug = Str::slug($data['name']);
@@ -45,7 +47,7 @@ class InstanceController extends Controller
             'slug' => $slug,
             'type' => $data['type'] ?? null,
             'active' => true,
-            'provider' => 'meta',
+            'provider' => $data['provider'],
         ]);
 
         $secret = $tenant->generateCredentials();
@@ -86,6 +88,42 @@ class InstanceController extends Controller
         return redirect()
             ->route('admin.instances.show', $tenant)
             ->with('status', 'Credenciales de WhatsApp actualizadas.');
+    }
+
+    /**
+     * Cambia el proveedor de envío activo de la instancia (meta / twilio).
+     */
+    public function updateProvider(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'provider' => ['required', Rule::in(ProviderManager::CHOICES)],
+        ]);
+
+        $tenant->update(['provider' => $data['provider']]);
+
+        return redirect()
+            ->route('admin.instances.show', $tenant)
+            ->with('status', 'Proveedor de envío actualizado a '.strtoupper($data['provider']).'.');
+    }
+
+    public function updateTwilio(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'twilio_account_sid' => ['nullable', 'string', 'max:80'],
+            'twilio_from' => ['nullable', 'string', 'max:30'],
+            'twilio_auth_token' => ['nullable', 'string'],
+        ]);
+
+        // Si el token viene vacío, conservamos el que ya estaba.
+        if (blank($data['twilio_auth_token'])) {
+            unset($data['twilio_auth_token']);
+        }
+
+        $tenant->update($data);
+
+        return redirect()
+            ->route('admin.instances.show', $tenant)
+            ->with('status', 'Credenciales de Twilio actualizadas.');
     }
 
     public function regenerateSecret(Tenant $tenant): RedirectResponse

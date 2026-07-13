@@ -3,7 +3,6 @@
 namespace App\Messaging;
 
 use App\Jobs\SendNotificationJob;
-use App\Messaging\Contracts\NotificationProvider;
 use App\Models\Notification;
 use App\Models\Tenant;
 
@@ -13,11 +12,14 @@ use App\Models\Tenant;
  * - queue():   registra la notificación (estado "queued") y encola el envío.
  * - process(): lo ejecuta el job en segundo plano; llama al proveedor y
  *              actualiza el estado según el resultado.
+ *
+ * El proveedor concreto (Meta / Twilio / simulación) lo resuelve el
+ * ProviderManager según la instancia.
  */
 class NotificationDispatcher
 {
     public function __construct(
-        private readonly NotificationProvider $provider,
+        private readonly ProviderManager $providers,
     ) {
     }
 
@@ -60,7 +62,7 @@ class NotificationDispatcher
             'from_address' => $tenant->wa_phone_number,
             'type' => $message->type,
             'payload' => $this->payloadFor($message),
-            'provider' => $this->provider->name(),
+            'provider' => $this->providers->for($tenant)->name(),
             'status' => 'queued',
         ]);
     }
@@ -74,7 +76,7 @@ class NotificationDispatcher
         $tenant = $notification->tenant;
         $message = $this->messageFromNotification($notification);
 
-        $result = $this->provider->send($tenant, $message);
+        $result = $this->providers->for($tenant)->send($tenant, $message);
 
         if ($result->success) {
             $notification->update([

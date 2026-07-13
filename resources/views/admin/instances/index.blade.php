@@ -17,7 +17,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Nombre</th><th>Tipo</th><th>Número</th><th>Mensajes</th><th>Estado</th><th></th>
+                        <th>Nombre</th><th>Tipo</th><th>Proveedor</th><th>Número</th><th>Mensajes</th><th>Estado</th><th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -25,7 +25,8 @@
                         <tr>
                             <td><strong>{{ $t->name }}</strong><br><span class="muted">{{ $t->slug }}</span></td>
                             <td>{{ $t->type ?? '—' }}</td>
-                            <td>{{ $t->wa_phone_number ?? '—' }}</td>
+                            <td>{{ strtoupper($t->provider ?? 'meta') }}</td>
+                            <td>{{ $t->provider === 'twilio' ? ($t->twilio_from ?? '—') : ($t->wa_phone_number ?? '—') }}</td>
                             <td>{{ $t->notifications_count }}</td>
                             <td>
                                 <span class="pill {{ $t->active ? 'on' : 'off' }}">

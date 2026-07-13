@@ -17,6 +17,7 @@
             <p class="muted">
                 {{ $tenant->slug }} · {{ $tenant->type ?? 'sin tipo' }} ·
                 <span class="pill {{ $tenant->active ? 'on' : 'off' }}">{{ $tenant->active ? 'Activa' : 'Inactiva' }}</span>
+                · Proveedor: <strong>{{ strtoupper($tenant->provider ?? 'meta') }}</strong>
             </p>
         </div>
         <form method="POST" action="{{ route('admin.instances.toggle', $tenant) }}">
@@ -47,7 +48,28 @@
         </form>
     </div>
 
-    <h2>WhatsApp (Meta)</h2>
+    <h2>Proveedor de envío</h2>
+    <div class="card">
+        <p class="muted" style="margin-top:0;">Define por dónde salen los mensajes de esta instancia. El resto del sistema funciona igual.</p>
+        <form method="POST" action="{{ route('admin.instances.provider', $tenant) }}">
+            @csrf
+            @method('PUT')
+            <div class="row" style="align-items:flex-end;">
+                <div>
+                    <label>Proveedor activo</label>
+                    <select name="provider">
+                        <option value="meta" {{ ($tenant->provider ?? 'meta') === 'meta' ? 'selected' : '' }}>Meta (WhatsApp Cloud API)</option>
+                        <option value="twilio" {{ $tenant->provider === 'twilio' ? 'selected' : '' }}>Twilio</option>
+                    </select>
+                </div>
+                <div style="flex:0;">
+                    <button class="btn secondary">Cambiar proveedor</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <h2>WhatsApp (Meta) @if (($tenant->provider ?? 'meta') === 'meta')<span class="pill on">activo</span>@endif</h2>
     <div class="card">
         <p class="muted" style="margin-top:0;">Datos que sacas del panel de Meta para el número de esta instancia.</p>
         <form method="POST" action="{{ route('admin.instances.whatsapp', $tenant) }}">
@@ -73,6 +95,30 @@
         </form>
     </div>
 
+    <h2>Twilio @if ($tenant->provider === 'twilio')<span class="pill on">activo</span>@endif</h2>
+    <div class="card">
+        <p class="muted" style="margin-top:0;">Datos de tu consola de Twilio (Account SID, Auth Token y número emisor de WhatsApp).</p>
+        <form method="POST" action="{{ route('admin.instances.twilio', $tenant) }}">
+            @csrf
+            @method('PUT')
+            <div class="row">
+                <div>
+                    <label>Account SID</label>
+                    <input type="text" name="twilio_account_sid" value="{{ old('twilio_account_sid', $tenant->twilio_account_sid) }}" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div>
+                    <label>Número emisor (WhatsApp)</label>
+                    <input type="text" name="twilio_from" value="{{ old('twilio_from', $tenant->twilio_from) }}" placeholder="+14155238886">
+                </div>
+            </div>
+
+            <label>Auth Token {{ $tenant->twilio_auth_token ? '(ya configurado — deja vacío para conservarlo)' : '' }}</label>
+            <input type="password" name="twilio_auth_token" placeholder="{{ $tenant->twilio_auth_token ? '••••••••••••' : 'tu Auth Token de Twilio' }}">
+
+            <button class="btn" style="margin-top:18px;">Guardar credenciales de Twilio</button>
+        </form>
+    </div>
+
     <h2>Cómo se conecta el cliente</h2>
     <div class="card">
         <p class="muted" style="margin-top:0;">1) Pide un token con sus credenciales · 2) Envía mensajes con ese token.</p>
@@ -92,7 +138,7 @@ Authorization: Bearer &lt;access_token&gt;
             @if (config('messaging.driver') === 'log')
                 <strong>Modo simulación activo</strong> (<code>MESSAGING_DRIVER=log</code>): no se envía nada real, solo se registra.
             @else
-                Envío <strong>real</strong> por Meta: requiere credenciales de WhatsApp cargadas arriba.
+                Envío <strong>real</strong> por <strong>{{ strtoupper($tenant->provider ?? 'meta') }}</strong>: requiere las credenciales de ese proveedor cargadas arriba.
             @endif
         </p>
         <form method="POST" action="{{ route('admin.instances.test', $tenant) }}">
