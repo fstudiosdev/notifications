@@ -27,7 +27,33 @@ class NotificationDispatcher
      */
     public function queue(Tenant $tenant, OutboundMessage $message): Notification
     {
-        $notification = $tenant->notifications()->create([
+        $notification = $this->record($tenant, $message);
+
+        SendNotificationJob::dispatch($notification->id);
+
+        return $notification;
+    }
+
+    /**
+     * Envía de forma SÍNCRONA (sin cola) y devuelve la notificación ya
+     * procesada, con su estado final (sent/failed). Pensado para el botón
+     * de prueba del panel, donde queremos ver el resultado al instante.
+     */
+    public function sendNow(Tenant $tenant, OutboundMessage $message): Notification
+    {
+        $notification = $this->record($tenant, $message);
+
+        $this->process($notification);
+
+        return $notification->refresh();
+    }
+
+    /**
+     * Registra la notificación saliente en estado "queued".
+     */
+    private function record(Tenant $tenant, OutboundMessage $message): Notification
+    {
+        return $tenant->notifications()->create([
             'channel' => 'whatsapp',
             'direction' => 'outbound',
             'to_address' => $message->to,
@@ -37,10 +63,6 @@ class NotificationDispatcher
             'provider' => $this->provider->name(),
             'status' => 'queued',
         ]);
-
-        SendNotificationJob::dispatch($notification->id);
-
-        return $notification;
     }
 
     /**

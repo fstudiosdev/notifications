@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Messaging\Contracts\NotificationProvider;
+use App\Messaging\Providers\LogNotificationProvider;
 use App\Messaging\Providers\MetaWhatsAppProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,12 +14,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Proveedor de mensajería por defecto: Meta WhatsApp Cloud API.
-        // Cambiar a Twilio (u otro) es cambiar solo esta línea.
+        // Proveedor de mensajería según config/messaging.php (MESSAGING_DRIVER).
+        //   'log'  -> simulación (no envía; útil para pruebas)
+        //   'meta' -> WhatsApp Cloud API de Meta (envío real, por defecto)
         $this->app->bind(NotificationProvider::class, function () {
-            return new MetaWhatsAppProvider(
-                graphVersion: config('services.meta.graph_version'),
-            );
+            return match (config('messaging.driver')) {
+                'log' => new LogNotificationProvider,
+                default => new MetaWhatsAppProvider(
+                    graphVersion: config('services.meta.graph_version'),
+                ),
+            };
         });
     }
 

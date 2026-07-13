@@ -4,6 +4,13 @@
 @section('content')
     <p><a href="{{ route('admin.instances.index') }}">← Instancias</a></p>
 
+    @if (session('error'))
+        <div class="flash err">{{ session('error') }}</div>
+    @endif
+    @if ($errors->any())
+        <div class="flash err">{{ $errors->first() }}</div>
+    @endif
+
     <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
         <div>
             <h1>{{ $tenant->name }}</h1>
@@ -76,6 +83,56 @@
 POST /api/notification/message
 Authorization: Bearer &lt;access_token&gt;
 { "to": "+521234567890", "type": "text", "text": "Su auto está listo" }</pre>
+    </div>
+
+    <h2>Enviar prueba</h2>
+    <div class="card">
+        <p class="muted" style="margin-top:0;">
+            Envía una notificación de inmediato para verificar la configuración.
+            @if (config('messaging.driver') === 'log')
+                <strong>Modo simulación activo</strong> (<code>MESSAGING_DRIVER=log</code>): no se envía nada real, solo se registra.
+            @else
+                Envío <strong>real</strong> por Meta: requiere credenciales de WhatsApp cargadas arriba.
+            @endif
+        </p>
+        <form method="POST" action="{{ route('admin.instances.test', $tenant) }}">
+            @csrf
+            <div class="row">
+                <div>
+                    <label>Número destino</label>
+                    <input type="text" name="to" value="{{ old('to') }}" placeholder="+521234567890" required>
+                </div>
+                <div>
+                    <label>Tipo</label>
+                    <select name="type" id="test-type" onchange="document.getElementById('test-text').style.display = this.value === 'text' ? 'block' : 'none'; document.getElementById('test-template').style.display = this.value === 'template' ? 'block' : 'none';">
+                        <option value="text" {{ old('type') === 'template' ? '' : 'selected' }}>Texto</option>
+                        <option value="template" {{ old('type') === 'template' ? 'selected' : '' }}>Plantilla</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="test-text" style="display:{{ old('type') === 'template' ? 'none' : 'block' }};">
+                <label>Texto del mensaje</label>
+                <input type="text" name="text" value="{{ old('text') }}" placeholder="Mensaje de prueba desde el panel.">
+            </div>
+
+            <div id="test-template" style="display:{{ old('type') === 'template' ? 'block' : 'none' }};">
+                <div class="row">
+                    <div>
+                        <label>Nombre de la plantilla</label>
+                        <input type="text" name="template" value="{{ old('template') }}" placeholder="hello_world">
+                    </div>
+                    <div>
+                        <label>Idioma</label>
+                        <input type="text" name="language" value="{{ old('language', 'es') }}" placeholder="es">
+                    </div>
+                </div>
+                <label>Parámetros (separados por coma)</label>
+                <input type="text" name="params" value="{{ old('params') }}" placeholder="Miguel, 14/07 10:00">
+            </div>
+
+            <button class="btn" style="margin-top:18px;">Enviar prueba</button>
+        </form>
     </div>
 
     <h2>Mensajes recientes ({{ $messages->count() }})</h2>

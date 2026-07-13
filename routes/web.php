@@ -27,4 +27,5 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('/instancias/{tenant}/whatsapp', [InstanceController::class, 'updateWhatsapp'])->name('instances.whatsapp');
     Route::post('/instancias/{tenant}/regenerar-secret', [InstanceController::class, 'regenerateSecret'])->name('instances.regenerate');
     Route::post('/instancias/{tenant}/estado', [InstanceController::class, 'toggleActive'])->name('instances.toggle');
+    Route::post('/instancias/{tenant}/probar', [InstanceController::class, 'sendTest'])->name('instances.test');
 });
