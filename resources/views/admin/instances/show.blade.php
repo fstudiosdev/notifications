@@ -69,7 +69,8 @@
         </form>
     </div>
 
-    <h2>WhatsApp (Meta) @if (($tenant->provider ?? 'meta') === 'meta')<span class="pill on">activo</span>@endif</h2>
+    @if (($tenant->provider ?? 'meta') === 'meta')
+    <h2>WhatsApp (Meta)</h2>
     <div class="card">
         <p class="muted" style="margin-top:0;">Datos que sacas del panel de Meta para el número de esta instancia.</p>
         <form method="POST" action="{{ route('admin.instances.whatsapp', $tenant) }}">
@@ -94,8 +95,10 @@
             <button class="btn" style="margin-top:18px;">Guardar credenciales de WhatsApp</button>
         </form>
     </div>
+    @endif
 
-    <h2>Twilio @if ($tenant->provider === 'twilio')<span class="pill on">activo</span>@endif</h2>
+    @if ($tenant->provider === 'twilio')
+    <h2>Twilio</h2>
     <div class="card">
         <p class="muted" style="margin-top:0;">Datos de tu consola de Twilio (Account SID, Auth Token y número emisor de WhatsApp).</p>
         <form method="POST" action="{{ route('admin.instances.twilio', $tenant) }}">
@@ -118,6 +121,7 @@
             <button class="btn" style="margin-top:18px;">Guardar credenciales de Twilio</button>
         </form>
     </div>
+    @endif
 
     <h2>Cómo se conecta el cliente</h2>
     <div class="card">
