@@ -48,4 +48,13 @@ return [
         'app_secret' => env('META_APP_SECRET'),
     ],
 
+    'twilio' => [
+        // Las credenciales de Twilio son POR INSTANCIA (ver tabla tenants).
+        // Aquí solo va la URL pública del webhook, tal como quedó registrada
+        // en la consola de Twilio: la firma se calcula sobre esa URL exacta y
+        // detrás de ngrok/proxy la que ve Laravel no coincide, lo que haría
+        // fallar la validación. Vacío = se usa la URL de la petición.
+        'webhook_url' => env('TWILIO_WEBHOOK_URL'),
+    ],
+
 ];

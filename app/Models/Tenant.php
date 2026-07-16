@@ -35,6 +35,7 @@ class Tenant extends Model
         'twilio_account_sid',
         'twilio_auth_token',
         'twilio_from',
+        'callback_url',
     ];
 
     protected $hidden = [

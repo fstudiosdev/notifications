@@ -30,6 +30,10 @@ class SendNotificationRequest extends FormRequest
             'language' => ['nullable', 'string', 'max:10'],
             'params' => ['nullable', 'array'],
             'params.*' => ['string'],
+
+            // Referencia de negocio del sistema cliente (ej. "cita:4581").
+            // La devolvemos tal cual cuando el cliente responda.
+            'referencia' => ['nullable', 'string', 'max:120'],
         ];
     }
 }

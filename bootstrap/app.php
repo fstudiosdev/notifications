@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ForceJsonResponse;
+use App\Http\Middleware\VerifyTwilioSignature;
 use App\Http\Middleware\VerifyWhatsAppSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'whatsapp.signature' => VerifyWhatsAppSignature::class,
+            'twilio.signature' => VerifyTwilioSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

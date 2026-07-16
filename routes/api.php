@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\TwilioWebhookController;
 use App\Http\Controllers\Api\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,9 +21,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notification/message', [NotificationController::class, 'store']);
 });
 
-// Webhook de Meta (WhatsApp). No lleva token de instancia:
+/*
+| Webhooks de los proveedores. No llevan token de instancia: se autentican
+| por firma, y la instancia se identifica por el número que recibió el mensaje.
+*/
+
+// Twilio (form-urlencoded, firma X-Twilio-Signature).
+Route::post('/webhooks/twilio/inbound', [TwilioWebhookController::class, 'inbound'])
+    ->middleware('twilio.signature');
+Route::post('/webhooks/twilio/status', [TwilioWebhookController::class, 'status'])
+    ->middleware('twilio.signature');
+
+// Meta (JSON, firma X-Hub-Signature-256).
 //  - GET  -> verificación del webhook (challenge)
-//  - POST -> mensajes entrantes y actualizaciones de estado (firma verificada)
+//  - POST -> mensajes entrantes y actualizaciones de estado
 Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify']);
 Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])
     ->middleware('whatsapp.signature');

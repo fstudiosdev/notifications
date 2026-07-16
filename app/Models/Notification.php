@@ -15,6 +15,8 @@ class Notification extends Model
         'from_address',
         'type',
         'payload',
+        'reference',
+        'button_payload',
         'provider',
         'provider_message_id',
         'status',

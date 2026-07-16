@@ -24,16 +24,20 @@ class NotificationController extends Controller
         /** @var Tenant $tenant */
         $tenant = $request->user();
 
+        $reference = $request->input('referencia');
+
         $message = $request->input('type') === 'template'
             ? OutboundMessage::template(
                 to: $request->input('to'),
                 name: $request->input('template'),
                 language: $request->input('language', 'es'),
                 params: $request->input('params', []),
+                reference: $reference,
             )
             : OutboundMessage::text(
                 to: $request->input('to'),
                 body: $request->input('text'),
+                reference: $reference,
             );
 
         $notification = $this->dispatcher->queue($tenant, $message);
@@ -43,6 +47,7 @@ class NotificationController extends Controller
         return response()->json([
             'id' => $notification->id,
             'status' => $notification->status, // queued
+            'referencia' => $notification->reference,
         ], 202);
     }
 }

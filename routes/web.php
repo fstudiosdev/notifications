@@ -27,6 +27,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('/instancias/{tenant}/proveedor', [InstanceController::class, 'updateProvider'])->name('instances.provider');
     Route::put('/instancias/{tenant}/whatsapp', [InstanceController::class, 'updateWhatsapp'])->name('instances.whatsapp');
     Route::put('/instancias/{tenant}/twilio', [InstanceController::class, 'updateTwilio'])->name('instances.twilio');
+    Route::put('/instancias/{tenant}/callback', [InstanceController::class, 'updateCallback'])->name('instances.callback');
     Route::post('/instancias/{tenant}/regenerar-secret', [InstanceController::class, 'regenerateSecret'])->name('instances.regenerate');
     Route::post('/instancias/{tenant}/estado', [InstanceController::class, 'toggleActive'])->name('instances.toggle');
     Route::post('/instancias/{tenant}/probar', [InstanceController::class, 'sendTest'])->name('instances.test');

@@ -63,8 +63,9 @@
         .pill.off { background: #450a0a; color: #fca5a5; }
         .pill.st-sent, .pill.st-delivered, .pill.st-read { background: #052e16; color: #86efac; }
         .pill.st-queued { background: #1e293b; color: var(--muted); }
-        .pill.st-failed { background: #450a0a; color: #fca5a5; }
+        .pill.st-failed, .pill.st-forward_failed { background: #450a0a; color: #fca5a5; }
         .pill.st-received { background: #172554; color: #93c5fd; }
+        .pill.st-forwarded { background: #052e16; color: #86efac; }
         code {
             background: var(--bg); padding: 3px 8px; border-radius: 6px;
             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 13px;

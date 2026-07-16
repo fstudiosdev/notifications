@@ -58,13 +58,26 @@ class NotificationDispatcher
         return $tenant->notifications()->create([
             'channel' => 'whatsapp',
             'direction' => 'outbound',
-            'to_address' => $message->to,
-            'from_address' => $tenant->wa_phone_number,
+            // Normalizado (solo dígitos) para poder casar después la respuesta
+            // del cliente, que llega en otro formato.
+            'to_address' => PhoneNumber::normalize($message->to),
+            'from_address' => PhoneNumber::normalize($this->senderFor($tenant)),
             'type' => $message->type,
             'payload' => $this->payloadFor($message),
+            'reference' => $message->reference,
             'provider' => $this->providers->for($tenant)->name(),
             'status' => 'queued',
         ]);
+    }
+
+    /**
+     * Número emisor de la instancia, según su proveedor.
+     */
+    private function senderFor(Tenant $tenant): ?string
+    {
+        return $tenant->provider === 'twilio'
+            ? $tenant->twilio_from
+            : $tenant->wa_phone_number;
     }
 
     /**
@@ -105,12 +118,14 @@ class NotificationDispatcher
                 name: $payload['template'] ?? '',
                 language: $payload['language'] ?? 'es',
                 params: $payload['params'] ?? [],
+                reference: $notification->reference,
             );
         }
 
         return OutboundMessage::text(
             to: $notification->to_address,
             body: $payload['text'] ?? '',
+            reference: $notification->reference,
         );
     }
 

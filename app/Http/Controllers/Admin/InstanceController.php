@@ -126,6 +126,23 @@ class InstanceController extends Controller
             ->with('status', 'Credenciales de Twilio actualizadas.');
     }
 
+    /**
+     * URL del sistema cliente (Clinea, el del taller...) a la que reenviamos
+     * los mensajes entrantes de esta instancia.
+     */
+    public function updateCallback(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'callback_url' => ['nullable', 'url', 'max:255'],
+        ]);
+
+        $tenant->update($data);
+
+        return redirect()
+            ->route('admin.instances.show', $tenant)
+            ->with('status', 'URL de reenvío actualizada.');
+    }
+
     public function regenerateSecret(Tenant $tenant): RedirectResponse
     {
         $secret = $tenant->generateCredentials();

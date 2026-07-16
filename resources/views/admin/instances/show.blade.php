@@ -123,6 +123,54 @@
     </div>
     @endif
 
+    <h2>Reenvío de respuestas</h2>
+    <div class="card">
+        <p class="muted" style="margin-top:0;">
+            Cuando el cliente responda por WhatsApp, reenviamos el mensaje a esta URL:
+            es el endpoint del sistema que consume el servicio (Clinea, el del taller...).
+            Ese sistema decide si contesta; nosotros solo transportamos.
+        </p>
+        <form method="POST" action="{{ route('admin.instances.callback', $tenant) }}">
+            @csrf
+            @method('PUT')
+            <label>URL del endpoint del sistema cliente</label>
+            <input type="url" name="callback_url" value="{{ old('callback_url', $tenant->callback_url) }}"
+                   placeholder="https://clinea.com/api/webhooks/mensajeria">
+            <button class="btn" style="margin-top:18px;">Guardar URL de reenvío</button>
+        </form>
+
+        @if ($tenant->callback_url)
+            <p class="muted" style="margin-bottom:6px; margin-top:18px; font-size:13px;">Le haremos POST con este cuerpo:</p>
+            <pre style="overflow-x:auto; background:var(--bg); padding:14px; border-radius:8px; border:1px solid var(--border); font-size:13px;">{
+  "referencia": "cita:4581",
+  "telefono":   "50377778888",
+  "tipo":       "boton",        // boton | texto
+  "payload":    "confirmar",    // si tocó un botón
+  "texto":      null            // si escribió texto libre
+}</pre>
+        @else
+            <p class="muted" style="margin-bottom:0; margin-top:14px; font-size:13px;">
+                Sin esta URL, las respuestas se guardan pero <strong>no se reenvían</strong> a nadie.
+            </p>
+        @endif
+    </div>
+
+    @if ($tenant->provider === 'twilio')
+    <h2>Webhook en Twilio</h2>
+    <div class="card">
+        <p class="muted" style="margin-top:0;">
+            Pega esta URL en la consola de Twilio → Messaging → Senders → WhatsApp senders →
+            Edit Sender → <em>Webhook URL for incoming messages</em>, método <strong>POST</strong>.
+        </p>
+        <div class="kv"><span class="k">Entrantes</span> <code>{{ url('/api/webhooks/twilio/inbound') }}</code></div>
+        <div class="kv"><span class="k">Estados</span> <code>{{ url('/api/webhooks/twilio/status') }}</code></div>
+        <p class="muted" style="margin-bottom:0; margin-top:14px; font-size:13px;">
+            En local necesitas ngrok. Además, la URL pública exacta debe ir en
+            <code>TWILIO_WEBHOOK_URL</code> del <code>.env</code>, o la validación de firma fallará.
+        </p>
+    </div>
+    @endif
+
     <h2>Cómo se conecta el cliente</h2>
     <div class="card">
         <p class="muted" style="margin-top:0;">1) Pide un token con sus credenciales · 2) Envía mensajes con ese token.</p>
@@ -192,7 +240,7 @@ Authorization: Bearer &lt;access_token&gt;
         @else
             <table>
                 <thead>
-                    <tr><th>Fecha</th><th>Dir.</th><th>Contacto</th><th>Tipo</th><th>Estado</th></tr>
+                    <tr><th>Fecha</th><th>Dir.</th><th>Contacto</th><th>Referencia</th><th>Respuesta</th><th>Estado</th></tr>
                 </thead>
                 <tbody>
                     @foreach ($messages as $m)
@@ -202,7 +250,16 @@ Authorization: Bearer &lt;access_token&gt;
                                 {{ $m->direction === 'inbound' ? '↓ entra' : '↑ sale' }}
                             </td>
                             <td>{{ $m->direction === 'inbound' ? $m->from_address : $m->to_address }}</td>
-                            <td>{{ $m->type }}</td>
+                            <td>@if ($m->reference)<code>{{ $m->reference }}</code>@else <span class="muted">—</span> @endif</td>
+                            <td>
+                                @if ($m->button_payload)
+                                    <span class="pill st-received">{{ $m->button_payload }}</span>
+                                @elseif ($m->direction === 'inbound')
+                                    <span class="muted">{{ Str::limit(data_get($m->payload, 'Body') ?? data_get($m->payload, 'text.body'), 28) ?: '—' }}</span>
+                                @else
+                                    <span class="muted">{{ $m->type }}</span>
+                                @endif
+                            </td>
                             <td>
                                 <span class="pill st-{{ $m->status }}">{{ $m->status }}</span>
                                 @if ($m->error)<br><span class="muted" style="font-size:12px;">{{ Str::limit($m->error, 40) }}</span>@endif
