@@ -118,6 +118,16 @@
             <label>Auth Token {{ $tenant->twilio_auth_token ? '(ya configurado — deja vacío para conservarlo)' : '' }}</label>
             <input type="password" name="twilio_auth_token" placeholder="{{ $tenant->twilio_auth_token ? '••••••••••••' : 'tu Auth Token de Twilio' }}">
 
+            <label style="margin-top:14px;">Tipo de número</label>
+            <select name="numero_tipo">
+                <option value="dedicado" @selected(old('numero_tipo', $tenant->numero_tipo) === 'dedicado')>Dedicado — número propio de la clínica</option>
+                <option value="comunitario" @selected(old('numero_tipo', $tenant->numero_tipo) === 'comunitario')>Comunitario — número compartido</option>
+            </select>
+            <small style="display:block;margin-top:6px;color:#666;">
+                En «comunitario» varias clínicas usan el MISMO número y las MISMAS credenciales de Twilio de arriba.
+                Las respuestas se enrutan por el contexto del mensaje, no por el número.
+            </small>
+
             <button class="btn" style="margin-top:18px;">Guardar credenciales de Twilio</button>
         </form>
     </div>

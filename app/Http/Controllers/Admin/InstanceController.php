@@ -112,6 +112,7 @@ class InstanceController extends Controller
             'twilio_account_sid' => ['nullable', 'string', 'max:80'],
             'twilio_from' => ['nullable', 'string', 'max:30'],
             'twilio_auth_token' => ['nullable', 'string'],
+            'numero_tipo' => ['required', 'in:dedicado,comunitario'],
         ]);
 
         // Si el token viene vacío, conservamos el que ya estaba.

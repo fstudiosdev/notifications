@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ForwardInboundMessageJob;
 use App\Messaging\PhoneNumber;
 use App\Models\Notification;
-use App\Models\Tenant;
 use App\Support\TwilioInbound;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,12 +29,16 @@ class TwilioWebhookController extends Controller
      */
     public function inbound(Request $request): Response
     {
-        // "To" es NUESTRO número (el de la instancia); "From" es el paciente.
-        $tenant = TwilioInbound::tenantFor($request->input('To'));
+        // Resuelve la instancia y la referencia. Enruta por el contexto de la
+        // respuesta (OriginalRepliedMessageSid) para soportar el número comunitario
+        // compartido; si no, por el número (dedicado). Ver TwilioInbound::resolve.
+        [$tenant, $reference] = TwilioInbound::resolve($request);
 
         if (! $tenant) {
             Log::warning('Twilio webhook: mensaje entrante sin instancia', [
                 'to' => $request->input('To'),
+                'from' => $request->input('From'),
+                'replied_sid' => $request->input('OriginalRepliedMessageSid'),
             ]);
 
             return $this->ok();
@@ -55,7 +58,7 @@ class TwilioWebhookController extends Controller
             'type' => filled($buttonPayload) ? 'button' : 'text',
             'payload' => $request->post(),
             'button_payload' => $buttonPayload,
-            'reference' => $this->referenceFor($tenant, $from),
+            'reference' => $reference,
             'provider' => 'twilio',
             'provider_message_id' => $request->input('MessageSid'),
             'status' => 'received',
@@ -83,25 +86,6 @@ class TwilioWebhookController extends Controller
         }
 
         return $this->ok();
-    }
-
-    /**
-     * Recupera la referencia de negocio (ej. "cita:4581") a partir del último
-     * mensaje que le enviamos a ese teléfono desde esta instancia. Así el
-     * sistema cliente sabe a qué cita corresponde la respuesta.
-     */
-    private function referenceFor(Tenant $tenant, ?string $phone): ?string
-    {
-        if (blank($phone)) {
-            return null;
-        }
-
-        return $tenant->notifications()
-            ->where('direction', 'outbound')
-            ->where('to_address', $phone)
-            ->whereNotNull('reference')
-            ->latest('id')
-            ->value('reference');
     }
 
     /**

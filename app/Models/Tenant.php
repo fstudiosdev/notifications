@@ -35,8 +35,20 @@ class Tenant extends Model
         'twilio_account_sid',
         'twilio_auth_token',
         'twilio_from',
+        'numero_tipo',
         'callback_url',
     ];
+
+    /** Tipos de número. */
+    public const NUMERO_DEDICADO = 'dedicado';
+
+    public const NUMERO_COMUNITARIO = 'comunitario';
+
+    /** ¿Esta instancia usa el número comunitario (compartido)? */
+    public function esComunitario(): bool
+    {
+        return $this->numero_tipo === self::NUMERO_COMUNITARIO;
+    }
 
     protected $hidden = [
         'client_secret_hash',
