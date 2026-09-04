@@ -62,6 +62,14 @@ class ForwardInboundMessageJob implements ShouldQueue
                 'tipo' => $isButton ? 'boton' : 'texto',
                 'payload' => $notification->button_payload,
                 'texto' => $isButton ? null : $this->textOf($notification),
+                // El SID del proveedor es la llave con la que el sistema cliente
+                // reconoce un mensaje que ya recibió. Este job reintenta hasta
+                // cuatro veces si el callback falla, y sin el SID el cliente no
+                // puede distinguir un reintento de un mensaje nuevo: lo guardaría
+                // dos veces. Va también el momento real del mensaje, que no es
+                // el del reenvío cuando hubo reintentos.
+                'message_sid' => $notification->provider_message_id,
+                'timestamp' => $notification->created_at?->toIso8601String(),
             ]);
 
         if ($response->failed()) {
