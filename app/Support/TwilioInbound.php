@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Messaging\PhoneNumber;
+use App\Models\AssistantNumber;
 use App\Models\Notification;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -22,12 +23,14 @@ class TwilioInbound
      *     del saliente que llevaba los botones). Ese saliente ya está asociado a
      *     una instancia y a una referencia → es lo más robusto y sirve tanto para
      *     número dedicado como compartido.
+     *  1b) Teléfono registrado para el asistente IA de una de las instancias del
+     *     número (doctor que le escribe a su asistente).
      *  2) Por el número que recibió el mensaje (`To`), cuando ese número es de una
      *     sola instancia (número dedicado).
      *  3) Número compartido sin contexto (p. ej. texto libre): el último saliente a
      *     ese paciente entre las instancias que comparten el número.
      *
-     * @return array{0: ?Tenant, 1: ?string}  [instancia, referencia]
+     * @return array{0: ?Tenant, 1: ?string} [instancia, referencia]
      */
     public static function resolve(Request $request): array
     {
@@ -54,6 +57,21 @@ class TwilioInbound
             ->get()
             ->filter(fn (Tenant $t) => PhoneNumber::normalize($t->twilio_from) === $to)
             ->values();
+
+        // 1b) Doctor que habla con el asistente IA de una instancia: su teléfono
+        //     está registrado ahí. Es lo que permite atribuir un mensaje «en frío»
+        //     en un número compartido (y no estorba en uno dedicado).
+        if ($candidatos->isNotEmpty() && $from !== null) {
+            $registrado = AssistantNumber::query()
+                ->whereIn('tenant_id', $candidatos->pluck('id'))
+                ->where('phone', $from)
+                ->with('tenant')
+                ->get();
+
+            if ($registrado->count() === 1) {
+                return [$registrado->first()->tenant, 'asistente'];
+            }
+        }
 
         // 2) Número dedicado: una sola instancia dueña del número.
         if ($candidatos->count() === 1) {

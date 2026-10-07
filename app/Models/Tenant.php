@@ -71,6 +71,12 @@ class Tenant extends Model
         return $this->hasMany(Notification::class);
     }
 
+    /** Teléfonos de doctores que hablan con el asistente IA de la instancia. */
+    public function assistantNumbers(): HasMany
+    {
+        return $this->hasMany(AssistantNumber::class);
+    }
+
     /**
      * Genera un par client_id + client_secret nuevo.
      * Guarda el hash del secret y devuelve el secret EN CLARO

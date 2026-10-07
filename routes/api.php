@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AssistantNumberController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TwilioWebhookController;
@@ -19,6 +20,11 @@ Route::post('/auth/token', [AuthController::class, 'token']);
 // Sanctum resuelve el token a su instancia (tenant).
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notification/message', [NotificationController::class, 'store']);
+
+    // Teléfonos de los doctores que hablan con el asistente IA de la instancia
+    // (para enrutar sus mensajes cuando el número es compartido).
+    Route::post('/assistant/numbers', [AssistantNumberController::class, 'store']);
+    Route::delete('/assistant/numbers', [AssistantNumberController::class, 'destroy']);
 });
 
 /*
