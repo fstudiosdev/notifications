@@ -19,8 +19,7 @@ class MetaWhatsAppProvider implements NotificationProvider
 {
     public function __construct(
         private readonly string $graphVersion = 'v21.0',
-    ) {
-    }
+    ) {}
 
     public function name(): string
     {
@@ -95,6 +94,10 @@ class MetaWhatsAppProvider implements NotificationProvider
                     'components' => $this->templateComponents($message->templateParams),
                 ],
             ]);
+        }
+
+        if ($message->type === 'audio') {
+            return array_merge($base, ['type' => 'audio', 'audio' => ['link' => (string) $message->mediaUrl]]);
         }
 
         return array_merge($base, [

@@ -20,8 +20,7 @@ class NotificationDispatcher
 {
     public function __construct(
         private readonly ProviderManager $providers,
-    ) {
-    }
+    ) {}
 
     /**
      * Registra la notificación y despacha el job de envío. Devuelve de
@@ -122,6 +121,14 @@ class NotificationDispatcher
             );
         }
 
+        if ($notification->type === 'audio') {
+            return OutboundMessage::audio(
+                to: $notification->to_address,
+                mediaUrl: $payload['media_url'] ?? '',
+                reference: $notification->reference,
+            );
+        }
+
         return OutboundMessage::text(
             to: $notification->to_address,
             body: $payload['text'] ?? '',
@@ -140,6 +147,10 @@ class NotificationDispatcher
                 'language' => $message->templateLanguage,
                 'params' => $message->templateParams,
             ];
+        }
+
+        if ($message->type === 'audio') {
+            return ['media_url' => $message->mediaUrl];
         }
 
         return ['text' => $message->text];

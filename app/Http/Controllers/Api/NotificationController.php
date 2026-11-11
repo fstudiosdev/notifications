@@ -13,8 +13,7 @@ class NotificationController extends Controller
 {
     public function __construct(
         private readonly NotificationDispatcher $dispatcher,
-    ) {
-    }
+    ) {}
 
     /**
      * Envía una notificación de WhatsApp para el tenant autenticado.
@@ -26,19 +25,25 @@ class NotificationController extends Controller
 
         $reference = $request->input('referencia');
 
-        $message = $request->input('type') === 'template'
-            ? OutboundMessage::template(
+        $message = match ($request->input('type')) {
+            'template' => OutboundMessage::template(
                 to: $request->input('to'),
                 name: $request->input('template'),
                 language: $request->input('language', 'es'),
                 params: $request->input('params', []),
                 reference: $reference,
-            )
-            : OutboundMessage::text(
+            ),
+            'audio' => OutboundMessage::audio(
+                to: $request->input('to'),
+                mediaUrl: $request->input('media_url'),
+                reference: $reference,
+            ),
+            default => OutboundMessage::text(
                 to: $request->input('to'),
                 body: $request->input('text'),
                 reference: $reference,
-            );
+            ),
+        };
 
         $notification = $this->dispatcher->queue($tenant, $message);
 

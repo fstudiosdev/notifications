@@ -61,4 +61,32 @@ class TwilioOutboundTest extends TestCase
                 && $body['Body'] === 'Mensaje de prueba';
         });
     }
+
+    public function test_la_nota_de_voz_va_a_twilio_como_media_url_sin_texto(): void
+    {
+        Http::fake(['api.twilio.com/*' => Http::response(['sid' => 'SM124'])]);
+
+        app(NotificationDispatcher::class)->sendNow(
+            $this->tenant(),
+            OutboundMessage::audio('+50363071123', 'https://agente.fstudios.dev/voz/abc.ogg'),
+        );
+
+        $this->assertDatabaseHas('notifications', ['type' => 'audio', 'status' => 'sent']);
+        Http::assertSent(fn ($request) => $request->data()['MediaUrl'] === 'https://agente.fstudios.dev/voz/abc.ogg'
+            && ! array_key_exists('Body', $request->data()));
+    }
+
+    public function test_la_api_acepta_audio_solo_con_url_https(): void
+    {
+        Http::fake(['api.twilio.com/*' => Http::response(['sid' => 'SM125'])]);
+        $tenant = $this->tenant();
+        $token = $tenant->createToken('x')->plainTextToken;
+
+        $this->withToken($token)->postJson('/api/notification/message', ['to' => '50363071123', 'type' => 'audio'])
+            ->assertStatus(422);
+        $this->withToken($token)->postJson('/api/notification/message', ['to' => '50363071123', 'type' => 'audio', 'media_url' => 'http://inseguro.test/a.ogg'])
+            ->assertStatus(422);
+        $this->withToken($token)->postJson('/api/notification/message', ['to' => '50363071123', 'type' => 'audio', 'media_url' => 'https://agente.fstudios.dev/voz/abc.ogg'])
+            ->assertStatus(202);
+    }
 }

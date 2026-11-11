@@ -20,7 +20,10 @@ class SendNotificationRequest extends FormRequest
     {
         return [
             'to' => ['required', 'string', 'max:20'],
-            'type' => ['required', Rule::in(['text', 'template'])],
+            'type' => ['required', Rule::in(['text', 'template', 'audio'])],
+
+            // Requerido cuando type = audio: Twilio/Meta lo descargan de ahí.
+            'media_url' => ['required_if:type,audio', 'nullable', 'url:https', 'max:1000'],
 
             // Requerido cuando type = text
             'text' => ['required_if:type,text', 'nullable', 'string', 'max:4096'],

@@ -98,6 +98,10 @@ class TwilioProvider implements NotificationProvider
             return $payload;
         }
 
+        if ($message->type === 'audio') {
+            return array_merge($base, ['MediaUrl' => (string) $message->mediaUrl]);
+        }
+
         return array_merge($base, [
             'Body' => (string) $message->text,
         ]);
