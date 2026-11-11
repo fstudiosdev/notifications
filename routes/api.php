@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AssistantNumberController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InboundMediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TwilioWebhookController;
 use App\Http\Controllers\Api\WhatsAppWebhookController;
@@ -25,6 +26,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // (para enrutar sus mensajes cuando el número es compartido).
     Route::post('/assistant/numbers', [AssistantNumberController::class, 'store']);
     Route::delete('/assistant/numbers', [AssistantNumberController::class, 'destroy']);
+
+    // Archivo de un mensaje entrante de la instancia (foto, nota de voz...).
+    Route::get('/inbound/{notification}/media/{index}', [InboundMediaController::class, 'show'])
+        ->whereNumber(['notification', 'index']);
 });
 
 /*

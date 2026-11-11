@@ -143,6 +143,49 @@ class TwilioInboundTest extends TestCase
             && $request['referencia'] === 'cita:7777');
     }
 
+    public function test_foto_y_nota_de_voz_se_reenvian_como_adjuntos(): void
+    {
+        Http::fake(['clinea.test/*' => Http::response(['ok' => true])]);
+
+        $tenant = $this->tenant();
+        $this->previousReminder($tenant, '50377778888', 'cita:7777');
+
+        $this->post('/api/webhooks/twilio/inbound', [
+            'From' => 'whatsapp:+50377778888',
+            'To' => 'whatsapp:+50322334455',
+            'MessageSid' => 'SM778',
+            'Body' => 'Mi comprobante',
+            'NumMedia' => '2',
+            'MediaUrl0' => 'https://api.twilio.com/media/ME1',
+            'MediaContentType0' => 'image/jpeg',
+            'MediaUrl1' => 'https://api.twilio.com/media/ME2',
+            'MediaContentType1' => 'audio/ogg',
+        ])->assertOk();
+
+        Http::assertSent(fn ($request) => $request['tipo'] === 'texto'
+            && $request['texto'] === 'Mi comprobante'
+            && $request['adjuntos'][0]['tipo'] === 'imagen'
+            && $request['adjuntos'][0]['url'] === 'https://api.twilio.com/media/ME1'
+            && $request['adjuntos'][1]['tipo'] === 'audio'
+            && $request['adjuntos'][1]['mime'] === 'audio/ogg'
+            && str_ends_with($request['adjuntos'][1]['ref'], '/media/1'));
+    }
+
+    public function test_texto_sin_archivos_lleva_adjuntos_vacio(): void
+    {
+        Http::fake(['clinea.test/*' => Http::response(['ok' => true])]);
+
+        $tenant = $this->tenant();
+        $this->previousReminder($tenant, '50377778888', 'cita:7777');
+
+        $this->post('/api/webhooks/twilio/inbound', [
+            'From' => 'whatsapp:+50377778888', 'To' => 'whatsapp:+50322334455',
+            'MessageSid' => 'SM779', 'Body' => 'Hola', 'NumMedia' => '0',
+        ])->assertOk();
+
+        Http::assertSent(fn ($request) => $request['adjuntos'] === []);
+    }
+
     public function test_sin_envio_previo_la_referencia_va_nula_pero_igual_se_reenvia(): void
     {
         Http::fake(['clinea.test/*' => Http::response(['ok' => true])]);

@@ -30,8 +30,7 @@ class ForwardInboundMessageJob implements ShouldQueue
 
     public function __construct(
         public readonly int $notificationId,
-    ) {
-    }
+    ) {}
 
     public function handle(): void
     {
@@ -70,6 +69,9 @@ class ForwardInboundMessageJob implements ShouldQueue
                 // el del reenvío cuando hubo reintentos.
                 'message_sid' => $notification->provider_message_id,
                 'timestamp' => $notification->created_at?->toIso8601String(),
+                // Fotos, notas de voz y documentos. Campo nuevo y opcional: el
+                // sistema que no lo use lo ignora (el «tipo» sigue siendo texto).
+                'adjuntos' => $this->attachmentsOf($notification),
             ]);
 
         if ($response->failed()) {
@@ -90,6 +92,51 @@ class ForwardInboundMessageJob implements ShouldQueue
     {
         return data_get($notification->payload, 'Body')
             ?? data_get($notification->payload, 'text.body');
+    }
+
+    /**
+     * Archivos del mensaje entrante: [{tipo, mime, url}].
+     * Twilio: NumMedia + MediaUrlN / MediaContentTypeN (la URL puede pedir las
+     * credenciales de la cuenta para abrirla). Meta: un objeto por tipo con su
+     * id y mime_type, sin URL directa.
+     *
+     * @return list<array{tipo: string, mime: ?string, url: ?string, ref?: string}>
+     */
+    private function attachmentsOf(Notification $notification): array
+    {
+        $payload = (array) $notification->payload;
+        $out = [];
+
+        $count = min((int) data_get($payload, 'NumMedia', 0), 10);
+        for ($i = 0; $i < $count; $i++) {
+            $mime = data_get($payload, "MediaContentType{$i}");
+            $out[] = [
+                'tipo' => $this->kindOf($mime),
+                'mime' => $mime,
+                'url' => data_get($payload, "MediaUrl{$i}"),
+                // Para pedirle el archivo al gateway: GET /api/inbound/{ref}.
+                'ref' => "{$notification->id}/media/{$i}",
+            ];
+        }
+
+        $metaTypes = ['image' => 'imagen', 'audio' => 'audio', 'voice' => 'audio', 'video' => 'video', 'document' => 'documento', 'sticker' => 'sticker'];
+        $type = data_get($payload, 'type');
+        if ($out === [] && isset($metaTypes[$type])) {
+            $out[] = ['tipo' => $metaTypes[$type], 'mime' => data_get($payload, "{$type}.mime_type"), 'url' => null];
+        }
+
+        return $out;
+    }
+
+    private function kindOf(?string $mime): string
+    {
+        return match (true) {
+            str_starts_with((string) $mime, 'image/webp') => 'sticker',
+            str_starts_with((string) $mime, 'image/') => 'imagen',
+            str_starts_with((string) $mime, 'audio/') => 'audio',
+            str_starts_with((string) $mime, 'video/') => 'video',
+            default => 'documento',
+        };
     }
 
     public function failed(Throwable $e): void
