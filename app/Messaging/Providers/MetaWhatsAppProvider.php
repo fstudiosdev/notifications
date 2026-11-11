@@ -97,7 +97,8 @@ class MetaWhatsAppProvider implements NotificationProvider
         }
 
         if ($message->type === 'audio') {
-            return array_merge($base, ['type' => 'audio', 'audio' => ['link' => (string) $message->mediaUrl]]);
+            // voice: true = nota de voz (micrófono y foto de perfil), no archivo de audio. Requiere Ogg/Opus mono.
+            return array_merge($base, ['type' => 'audio', 'audio' => ['link' => (string) $message->mediaUrl, 'voice' => true]]);
         }
 
         return array_merge($base, [
